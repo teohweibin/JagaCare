@@ -1,0 +1,6 @@
+{
+  "name": "JagaCare",
+  "description": "Calm, elderly-friendly anti-scam checker for WhatsApp, Telegram, SMS, screenshots, and voice notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

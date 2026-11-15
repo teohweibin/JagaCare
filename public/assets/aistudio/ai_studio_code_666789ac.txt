@@ -1,0 +1,204 @@
+Build an elderly-friendly anti-scam checking web application called **"JagaCare"** (Chinese title: **"JagaCare 安心查"**) using **React** (frontend) and **Node.js** (backend API for Gemini multimodal analysis), designed to help senior citizens check suspicious messages from WhatsApp, Telegram, SMS, screenshots, and voice notes before taking action.
+
+---
+
+### 1. VISUAL DESIGN SYSTEM ("FRIENDLY OUTLINED PASTEL" + ELDERLY-FIRST ACCESSIBILITY)
+
+#### Color Palette (Exact Hex Codes)
+- **Page Background**: Warm Soft Cream `#FAF5F0`
+- **Background Geometric Shapes** (fixed/behind content, non-interactive):
+  - Pale Seafoam Teal `#BCE5DE`: soft circle top-right (55% opacity) & lower-right (48% opacity)
+  - Muted Peach `#F4B69C`: soft large rounded-square pill shape mid-left (42% opacity) & circle bottom-left (38% opacity)
+- **Main Cards**: Crisp Pure White `#FFFFFF` with solid `1.8px–2px` Dark Charcoal `#18181B` borders and **no drop shadows**.
+- **Text Ink**:
+  - Primary headings, body text, button labels: Deep Charcoal `#18181B`
+  - Subtitles, placeholders, secondary hints: Slate Gray `#52525B`
+- **Primary & Secondary Accents**:
+  - **Primary Action Buttons, Circular Back Button, Step Number Circles, Brand Shield Badge**: Vibrant Mint Green `#5CE094` with `2px solid #18181B` border and `#18181B` text/icons.
+  - **Secondary Pill Buttons & Active Language Pills**: Soft Lavender-Purple `#8257E5` with `2px solid #18181B` border and `#FFFFFF` text/icons.
+  - **Subtle Tinted Input Boxes & Secondary Link Pills**: Pale Lavender `#EFEAFC` with `1.5px–1.8px solid #18181B` border.
+  - **Stacked/Peeking Card Accent Layers** (behind Hero card, Loading card, and Verdict Banner):
+    - Back-most layer (+10px right/down offset): Warm Golden Yellow `#F6C344` with `1.8px solid #18181B` border.
+    - Middle layer (+5px right/down offset): Soft Lavender `#8B5CF6` with `1.8px solid #18181B` border.
+    - Front card: Crisp `#FFFFFF` (or Verdict surface color) with `2px solid #18181B` border.
+- **High-Contrast 3-Color Verdict & Emergency Palette**:
+  - **STOP (Scam)**: Header Banner `#DC2626` (white text), Card Surface `#FEF2F2`, Body Text `#7F1D1D`.
+  - **WAIT (Suspicious)**: Header Banner `#D97706` (white text), Card Surface `#FFFBEB`, Body Text `#78350F`.
+  - **SAFE (No Obvious Danger)**: Header Banner `#5CE094` (`#18181B` dark text), Card Surface `#ECFDF3`, Body Text `#14532D`.
+  - **Emergency Rescue Outline / Button**: `#DC2626` border/text on `#FEF2F2` background (and solid `#DC2626` with `#18181B` border for the Call 997 CTA).
+
+#### Typography
+- **Font Family**: **Plus Jakarta Sans** (clean geometric sans-serif) across all headings, buttons, and body text.
+- **Elderly-First Scale** (minimum 18px body text):
+  - Screen/Card Headings: `23px–26px`, Bold, line-height `31px–34px`
+  - Section/Button Titles: `19px–21px`, Bold, line-height `26px–28px`
+  - Body Text: `18px–19px`, Regular/Bold, line-height `26px–28px`
+  - Chip/Badge Labels: `16px`, SemiBold/Bold
+
+#### Corner Radius, Sizing & Layout
+- **Centered Column Layout**: `max-width: 680px` centered horizontally on all screen sizes.
+- **Spacing**: `22px` horizontal page margins, `18px` top/bottom padding, `24px` internal card padding, `16px–20px` vertical gaps between cards and buttons.
+- **Shapes**:
+  - Main white cards: `26px–28px` border-radius.
+  - All buttons, language chips, example chips, portal buttons, category badges, and single-line text inputs: **Full Pill (`9999px`)**.
+  - Multi-line message textarea: `18px` border-radius.
+  - Back button & Brand Shield icon badge: **Circular** (`54px` and `48px` diameter).
+- **Tap Targets**: Minimum `48px–52px` for chips/links, `56px–66px` for standard buttons, `72px–84px` for primary/emergency action buttons.
+
+---
+
+### 2. LANGUAGE & LOCALIZATION SYSTEM (3 LANGUAGES)
+
+Top-bar segmented pill selector with checkmark icon on active pill:
+1. **English** (`en`)
+2. **Bahasa Melayu** (`ms`)
+3. **中文** (`zh`)
+
+- Persist selected language in `localStorage`.
+- Switching languages immediately updates all UI copy, example chips, emergency rescue steps, Text-to-Speech voice locale (`en-MY` / `en-US`, `ms-MY`, `zh-CN`), and the target language passed to Gemini.
+
+---
+
+### 3. PERSISTENT HEADER & TRUSTED FAMILY CONTACT MODAL
+
+#### Header (shown on all screens)
+- **Home Screen Left**: Circular `#5CE094` shield badge + **"JagaCare"** (中文: **"JagaCare 安心查"**) + subtitle (*"Calm scam checker for seniors"* / *"Penyemak penipuan untuk warga emas"* / *"长辈防诈骗小帮手"*).
+- **Sub-Screens Left (Results & Emergency Rescue)**: Circular `#5CE094` Back Button (`54px`) + *"Back to Home"* label. Also support browser back navigation cleanly.
+- **Top-Right Pill Button**: *"Family"* (*"Keluarga"* / *"家人"*). When saved, background turns `#EFEAFC` with `#8257E5` icon and displays the saved family member's name (truncated to 10 chars).
+- **Row Below**: Full-width 3-column pill language selector (`English` | `Bahasa Melayu` | `中文`).
+
+#### Trusted Family Member Modal
+- Triggered from the Header *"Family"* button or when tapping *"Send to Family to Double-Check"* if no contact is saved yet.
+- Stored in `localStorage` (`trustedFamilyName`, `trustedFamilyPhone`).
+- Fields (single-line pill inputs with `#EFEAFC` fill and `1.5px solid #18181B` border):
+  - **Family Member's Name** (e.g., *"Mei Ling / Ah Boy"*)
+  - **WhatsApp Phone Number** (e.g., *"012-345 6789"*)
+- Validation: Name must be non-blank and phone must have at least 7 digits; otherwise show inline red error.
+- Buttons:
+  - Pill Mint Green `#5CE094`: **"Save Contact"**
+  - Pill White Outlined: **"Cancel"**
+- If opened via *"Send to Family to Double-Check"*, saving immediately triggers the WhatsApp share link and shows a confirmation toast/snackbar.
+
+---
+
+### 4. SCREEN 1: HOME SCREEN (MAXIMUM 3 CLEAR ACTIONS)
+
+1. **Stacked Hero Card** (Golden + Lavender peeking layers behind white card):
+   - Left: *"Unsure about a message?"* + *"Check WhatsApp, Telegram, SMS, or voice notes before you reply, click, or pay."*
+   - Right: Calm illustrative thumbnail (`104x82px`, `18px` rounded corners, `1.5px` charcoal border) showing a protective teal shield guarding a smartphone with a checkmark.
+
+2. **Action 1 — Giant Primary Pill Button (`min-height: 84px`, `#5CE094` Mint Green)**:
+   - Label: **"Upload Screenshot or Photo"**
+   - Subtext: *"Chat screenshots, letters, QR codes, or receipts"*
+   - Opens image file picker (`image/*`). Selecting an image immediately starts multimodal Gemini analysis and navigates to the Results Screen.
+
+3. **Action 2 — Outlined White Card (`Paste Message Text` + `Voice Note` + `3 Examples`)**:
+   - Header row: *"Paste Message Text"* + Pill **"Paste"** button (reads clipboard via `navigator.clipboard.readText()`) + **"Clear"** icon button (visible when text is non-empty).
+   - Multi-line textarea (`18px` radius, `#EFEAFC` background, min 4 rows, `19px` text).
+   - Inline red error banner if user taps Check with empty input.
+   - Secondary Pill Button (`min-height: 60px`, `#8257E5` Lavender with white text): **"Check Message"**.
+   - Pill Outlined Button (`min-height: 58px`, `#FAF5F0` Cream): **"Upload Voice Note / Audio"** (opens `audio/*` file picker, max 18MB; auto-analyzes on selection).
+   - **3 Quick "Try an example:" Pill Chips** (tapping fills the textarea with the localized sample):
+     1. **Fake Bank SMS**: `"RM0.00 MAYBANK: Your MAE account is suspended due to suspicious transaction RM2,450.00. Verify within 2 hours at http://maybank2u-verify-my.com or funds will be frozen."` (plus BM & 中文 equivalents)
+     2. **Telegram Job Scam**: `"Hi! Join our Telegram VIP part-time task team. Just like 3 TikTok videos and get RM50 instant Touch n Go transfer! Upgrade RM300 VIP task to earn RM1,200 daily guaranteed! Contact @HR_Jason88 now."` (plus BM & 中文 equivalents)
+     3. **Safe Family Message**: `"Hi Ma, I just reached KL safely. Remember to take your afternoon medicine and drink more water. I will bring dinner back at 6:30pm!"` (plus BM & 中文 equivalents)
+
+4. **Action 3 — Prominent Emergency Pill Button (`min-height: 72px`, `#FEF2F2` bg, `2.2px solid #DC2626` border)**:
+   - Title: **"Help! I Already Paid or Clicked a Link"**
+   - Subtext: *"Calm step-by-step rescue & 997 hotline"*
+
+---
+
+### 5. SCREEN 2: RESULTS SCREEN
+
+- **Loading State**: Stacked pastel card with spinner, *"Checking safely for you..."*, *"Please wait a moment. Do not reply or click anything yet."*, and a pill **"Cancel"** button.
+- **Error State**: Outlined `#FEF2F2` card showing real error message + Mint Green pill **"Try Again"** button.
+- **Success State** (stepped cards in order):
+  1. **Media Preview** (if applicable): Uploaded screenshot preview (`max-height: 180px`) or lavender pill showing *"Checking audio: <filename>"*.
+  2. **Stacked Verdict Banner Card**:
+     - Colored Header Bar:
+       - `STOP`: Red `#DC2626` — *"STOP — Likely a Scam. Do NOT reply, click, or pay."*
+       - `WAIT`: Amber `#D97706` — *"WAIT — Looks Suspicious. Check safely first."*
+       - `SAFE`: Mint Green `#5CE094` — *"NO OBVIOUS DANGER — Still never share OTP codes or transfer money to strangers."*
+     - Card Body: Pill `scam_category` tag + Bold `headline` + `simple_summary`.
+  3. **Pill "Read This Aloud" Button (`min-height: 60px`, `#5CE094` Mint Green; switches to `#DC2626` Red "Stop Reading" while active)**:
+     - Uses **Web Speech API (`window.speechSynthesis`)** at calm `0.88` speech rate in the selected language (`en-MY`/`en-US`, `ms-MY`, `zh-CN`), reading: Verdict prefix + `headline` + `simple_summary` + all `red_flags.plain_explanation` + numbered `safe_check_steps`.
+  4. **"Why This Looks Risky" Card** (or **"What We Checked"** when `SAFE`):
+     - Lists each item from `red_flags`: highlighted bordered quote box (`"quoted_clue"`) + bullet `plain_explanation`.
+  5. **"How to Check Safely Before Acting" Card**:
+     - Lists numbered steps from `safe_check_steps` with `34px` circular Mint Green `#5CE094` number badges.
+     - **Official Safe Check Portals** (pill `#EFEAFC` buttons opening in new tab `target="_blank" rel="noopener noreferrer"`):
+       - *PDRM Semak Mule*: `https://semakmule.rmp.gov.my` (shown for all `STOP`/`WAIT` results and account/phone checks)
+       - *Official PosLaju Tracker*: `https://tracking.pos.com.my` (shown when PosLaju is mentioned)
+       - *Official J&T Express Tracker*: `https://www.jtexpress.my/tracking` (shown when J&T is mentioned)
+       - *Bank Negara Scam Alert*: `https://www.bnm.gov.my/scam-alert` (shown for bank/eWallet alerts)
+  6. **Pill Lavender `#8257E5` "Send to Family to Double-Check" Button**:
+     - Formats Malaysian phone numbers (`0123456789` -> `60123456789`) and opens `https://wa.me/<digits>?text=<encodedSummary>` with verdict, `family_share_summary`, and top 3 warning signs. If no contact is saved, opens the Family Modal first.
+  7. **Footer Actions**:
+     - Pill White Outlined: **"Check Another Message"**
+     - If verdict is `STOP` or `WAIT`: Pill Red Emergency button **"Help! I Already Paid or Clicked a Link"**.
+
+---
+
+### 6. SCREEN 3: EMERGENCY RESCUE MODE
+
+- **Red Alert Card**: *"Calm Rescue Guide"* + *"Take a deep breath. Follow these clear steps right now."*
+- **3 Pill Scenario Selector Tabs** (active = solid `#DC2626` with `#18181B` border & white text; inactive = `#FFFFFF` with `#DC2626` border & text):
+  1. **Sent Money / Bank Info**:
+     - Step 1: Call bank's 24/7 Fraud Hotline using official numbers below (never numbers from the scam message).
+     - Step 2: Call Malaysia's NSRC at **997** immediately (24/7).
+     - Step 3: Screenshot chat messages, phone numbers, and transfer receipt for a police report.
+     - Giant Red Pill CTA (`72px` height): **"Call NSRC 997 Now (24/7)"** (`tel:997`).
+  2. **Installed App / .APK**:
+     - Step 1: Turn OFF Wi-Fi and Mobile Data immediately (enable Airplane Mode).
+     - Step 2: Do NOT open any banking or eWallet apps.
+     - Step 3: Ask a trusted family member to uninstall the unknown app or reset the phone, and call the bank from another phone.
+  3. **Shared OTP / WhatsApp**:
+     - Step 1: Call your bank immediately to freeze online access.
+     - Step 2: Warn family/friends that your WhatsApp/Telegram may be hijacked.
+     - Step 3: Never share another 6-digit code.
+     - Lavender Pill CTA: **"Warn Family About Account Hijack"** -> opens `https://wa.me/<familyPhone>?text=...` with an urgent pre-written warning.
+- **Official Malaysian Bank 24/7 Hotlines Card** (pill `#EFEAFC` `tel:` links):
+  - Maybank 24/7 Fraud: `1300-88-6688`
+  - CIMB Fraud Hotline: `03-6204-7788`
+  - Public Bank Hotline: `03-2177-3555`
+  - RHB Customer Care: `03-9206-8118`
+  - Hong Leong Bank: `03-7626-8899`
+  - AmBank Contact Centre: `03-2178-8888`
+  - Bank Islam Hotline: `03-2690-0900`
+
+---
+
+### 7. NODE.JS BACKEND & GEMINI AI ANALYSIS SPECIFICATION
+
+- **Backend API Endpoint**: `POST /api/analyze` (accepts `multipart/form-data` or JSON with `text`, `image` file up to 20MB, or `audio` file up to 18MB, plus `language`: `en` | `ms` | `zh`). Call Gemini server-side using `@google/genai` with `GEMINI_API_KEY` from environment variables and a 60-second timeout.
+- **Recommended Model**: `gemini-2.5-flash` or latest Gemini Flash multimodal model with `temperature: 0.2` and `responseMimeType: "application/json"` + strict `responseSchema`.
+- **Exact System Prompt**:
+  > You are JagaCare, a calm, protective, and patient scam-detection assistant built especially to protect elderly users from WhatsApp, Telegram, SMS, and social media scams in Malaysia and Southeast Asia.
+  > Analyze the user's uploaded screenshot, image, audio, or pasted text for signs of fraud, impersonation, urgency manipulation, suspicious links, malicious .apk files, fake receipts, or requests for money/OTP codes.
+  >
+  > RULES:
+  > 1. Audience & Tone: Write as if gently explaining to a 70-year-old parent. Use short, reassuring sentences. NEVER use technical jargon ("phishing", "spoofing", "malware", "social engineering", "typosquatting", "sideloading"). Always use simple words ("fake website", "trick", "harmful app file", "trying to scare you").
+  > 2. Language: Reply in the language requested by the user (or match the main language of the message: English, Bahasa Melayu, or Simplified Chinese). If the message uses Manglish or mixed languages, understand it accurately and reply clearly in simple language.
+  > 3. Conservative Safety: If a message asks for money, bank details, 6-digit OTP/TAC codes, installing an .apk file, or clicking an unfamiliar link with urgency, NEVER label it "SAFE". Label it "STOP" or "WAIT".
+  > 4. Local Context: Recognize Malaysian entities (PDRM, LHDN, KWSP, TNB, PosLaju, J&T, Maybank, CIMB, Public Bank, RHB, Hong Leong, Touch 'n Go eWallet, NSRC 997, Semak Mule). Never invent fake bank phone numbers.
+  > 5. Output ONLY valid JSON matching this exact structure:
+  > ```json
+  > {
+  >   "verdict": "STOP" | "WAIT" | "SAFE",
+  >   "headline": "Short 5-8 word headline in plain language",
+  >   "scam_category": "e.g., Fake Bank Alert / Fake Police Threat / Job Scam / Hijacked Friend / Safe Message",
+  >   "simple_summary": "1-2 short, calm sentences explaining what is happening.",
+  >   "red_flags": [
+  >     {
+  >       "quoted_clue": "Exact phrase, link, or visual detail spotted in the message",
+  >       "plain_explanation": "1 simple sentence explaining why this is risky"
+  >     }
+  >   ],
+  >   "safe_check_steps": [
+  >     "Step 1: Concrete, safe action the user should take before doing anything",
+  >     "Step 2: Next safe verification step"
+  >   ],
+  >   "family_share_summary": "Short 2-sentence summary ready to send via WhatsApp to a family member asking them to double-check."
+  > }
+  > ```
