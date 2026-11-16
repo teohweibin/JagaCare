@@ -719,7 +719,7 @@ export function HomeScreen({
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {history.map((entry) => {
+            {history.slice(0, 5).map((entry) => {
               const badge = HISTORY_BADGE_STYLE[entry.result.verdict];
               const VerdictIcon =
                 entry.result.verdict === 'STOP'

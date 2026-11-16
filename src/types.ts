@@ -30,6 +30,19 @@ export interface PhoneLookupSummary {
   reason?: string;
 }
 
+export interface BankLookupSummary {
+  available: boolean;
+  police_report_count: number;
+  verified_report_count: number;
+  unverified_report_count: number;
+  fraud: boolean;
+  bnm_alert: boolean;
+  bank_name?: string;
+  holder_name?: string;
+  police_report_status?: string;
+  reason?: string;
+}
+
 export interface AnalysisResult {
   verdict: Verdict;
   headline: string;
@@ -40,6 +53,7 @@ export interface AnalysisResult {
   family_share_summary: string;
   extracted_phone_numbers?: string[];
   phone_lookup?: PhoneLookupSummary;
+  bank_lookup?: BankLookupSummary;
 }
 
 export interface TrustedFamilyContact {

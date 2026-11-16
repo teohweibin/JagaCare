@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type {
   AnalysisResult,
+  HistoryEntry,
   Language,
   SubmittedInput,
   TrustedFamilyContact,
@@ -37,6 +38,7 @@ import {
 } from '../utils/localFlags';
 import type { FlagTargetKind, LocalScamFlag } from '../utils/localFlags';
 import { StackedCard } from './StackedCard';
+import { ScamTrendsChart } from './ScamTrendsChart';
 
 interface ResultsScreenProps {
   language: Language;
@@ -46,6 +48,7 @@ interface ResultsScreenProps {
   result: AnalysisResult | null;
   submittedInput: SubmittedInput | null;
   familyContact: TrustedFamilyContact | null;
+  history?: HistoryEntry[];
   onCancelLoading: () => void;
   onRetry: () => void;
   onCheckAnother: () => void;
@@ -102,6 +105,7 @@ export function ResultsScreen({
   result,
   submittedInput,
   familyContact,
+  history = [],
   onCancelLoading,
   onRetry,
   onCheckAnother,
@@ -173,6 +177,7 @@ export function ResultsScreen({
     setSpeechError('');
 
     const db = result.phone_lookup;
+    const bankDb = result.bank_lookup;
     const verdictPrefix =
       submittedInput?.type === 'phone' && db?.available
         ? db.police_report_count > 0 || db.verified_report_count > 0 || db.fraud
@@ -181,6 +186,17 @@ export function ResultsScreen({
           ? t.results.phoneVerdictBanner.suspiciousFound
           : result.verdict === 'WAIT' && db.business_tier !== 'verified_spoofing'
           ? t.results.phoneVerdictBanner.noReportsFound
+          : t.results.verdictBanner[result.verdict]
+        : submittedInput?.type === 'bank' && bankDb?.available
+        ? bankDb.police_report_count > 0 ||
+          bankDb.verified_report_count > 0 ||
+          bankDb.fraud ||
+          bankDb.bnm_alert
+          ? t.results.bankVerdictBanner.reportsFound
+          : bankDb.unverified_report_count > 0
+          ? t.results.bankVerdictBanner.suspiciousFound
+          : result.verdict === 'WAIT'
+          ? t.results.bankVerdictBanner.noReportsFound
           : t.results.verdictBanner[result.verdict]
         : t.results.verdictBanner[result.verdict];
     const flagExplanations = result.red_flags
@@ -428,6 +444,7 @@ export function ResultsScreen({
           <p className="text-[19px] sm:text-[20px] font-extrabold leading-[26px]">
             {(() => {
               const db = result.phone_lookup;
+              const bankDb = result.bank_lookup;
               if (submittedInput?.type === 'phone' && db?.available) {
                 if (db.police_report_count > 0 || db.verified_report_count > 0 || db.fraud) {
                   return t.results.phoneVerdictBanner.reportsFound;
@@ -437,6 +454,22 @@ export function ResultsScreen({
                 }
                 if (result.verdict === 'WAIT' && db.business_tier !== 'verified_spoofing') {
                   return t.results.phoneVerdictBanner.noReportsFound;
+                }
+              }
+              if (submittedInput?.type === 'bank' && bankDb?.available) {
+                if (
+                  bankDb.police_report_count > 0 ||
+                  bankDb.verified_report_count > 0 ||
+                  bankDb.fraud ||
+                  bankDb.bnm_alert
+                ) {
+                  return t.results.bankVerdictBanner.reportsFound;
+                }
+                if (bankDb.unverified_report_count > 0) {
+                  return t.results.bankVerdictBanner.suspiciousFound;
+                }
+                if (result.verdict === 'WAIT') {
+                  return t.results.bankVerdictBanner.noReportsFound;
                 }
               }
               return t.results.verdictBanner[result.verdict];
@@ -539,6 +572,63 @@ export function ResultsScreen({
                 !result.phone_lookup.fraud &&
                 !result.phone_lookup.spam &&
                 result.phone_lookup.business_tier !== 'verified_spoofing' && (
+                  <p className="mt-2.5 text-[16px] leading-[23px] text-[#52525B] font-medium">
+                    {t.results.dbZeroReportsNote}
+                  </p>
+                )}
+            </div>
+          )}
+
+          {/* Live PenipuMY Bank Database Summary Badge Box */}
+          {result.bank_lookup?.available && (
+            <div className="mt-4 rounded-[20px] bg-[#FFFFFF] border-[1.8px] border-[#18181B] p-4">
+              <p className="text-[16px] font-extrabold text-[#18181B]">
+                {t.results.dbSummaryTitle}
+              </p>
+
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-[1.6px] border-[#18181B] text-[16px] font-bold tabular-nums ${
+                    result.bank_lookup.police_report_count > 0
+                      ? 'bg-[#FEE2E2] text-[#7F1D1D]'
+                      : 'bg-[#FAF5F0] text-[#18181B]'
+                  }`}
+                >
+                  <span>{t.results.dbPoliceReports}</span>
+                  <span>{result.bank_lookup.police_report_count}</span>
+                </span>
+
+                {(() => {
+                  const communityCount =
+                    result.bank_lookup.verified_report_count +
+                    result.bank_lookup.unverified_report_count;
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-[1.6px] border-[#18181B] text-[16px] font-bold tabular-nums ${
+                        communityCount > 0
+                          ? 'bg-[#FEF3C7] text-[#78350F]'
+                          : 'bg-[#FAF5F0] text-[#18181B]'
+                      }`}
+                    >
+                      <span>{t.results.dbCommunityReports}</span>
+                      <span>{communityCount}</span>
+                    </span>
+                  );
+                })()}
+
+                {result.bank_lookup.bnm_alert && (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-[1.6px] border-[#18181B] bg-[#FEE2E2] text-[16px] font-bold text-[#7F1D1D]">
+                    <span>{t.results.dbBnmAlert}</span>
+                    <span>{t.results.dbBnmYes}</span>
+                  </span>
+                )}
+              </div>
+
+              {result.bank_lookup.police_report_count === 0 &&
+                result.bank_lookup.verified_report_count === 0 &&
+                result.bank_lookup.unverified_report_count === 0 &&
+                !result.bank_lookup.fraud &&
+                !result.bank_lookup.bnm_alert && (
                   <p className="mt-2.5 text-[16px] leading-[23px] text-[#52525B] font-medium">
                     {t.results.dbZeroReportsNote}
                   </p>
@@ -848,6 +938,9 @@ export function ResultsScreen({
           </div>
         )}
       </div>
+
+      {/* 8. Footer: Scam Detection Trends D3 Chart */}
+      <ScamTrendsChart history={history} language={language} />
     </div>
   );
 }

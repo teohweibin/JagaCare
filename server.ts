@@ -221,12 +221,95 @@ interface PenipuMYLookupResult {
   reason?: string;
 }
 
+interface PenipuMYBankLookupResult {
+  available: boolean;
+  bank_account?: string;
+  holder_name?: string;
+  bank_name?: string;
+  police_report_count: number;
+  police_report_status?: string;
+  verified_report_count: number;
+  unverified_report_count: number;
+  bnm_alert: boolean;
+  fraud: boolean;
+  risk_level?: string;
+  risk_score?: number;
+  risk_reasons?: string[];
+  reason?: string;
+}
+
+function getPenipuMYKey(): string {
+  return (process.env.PENIPUMY_KEY || process.env.PENIPUMY_API_KEY || "").trim();
+}
+
 function cleanPhoneForLookup(raw: string): string {
   const trimmed = raw.trim();
   const hasLeadingPlus = trimmed.startsWith("+");
   const digitsOnly = trimmed.replace(/\D/g, "");
   if (!digitsOnly) return "";
   return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly;
+}
+
+async function fetchPenipuMYJson(
+  url: string,
+  apiKey: string,
+  signal: AbortSignal
+): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; reason: string }> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "X-API-Key": apiKey,
+      Accept: "application/json",
+      "User-Agent": "JagaCare/1.0 (+https://penipu.my)",
+    },
+    signal,
+  });
+
+  if (response.status === 429) {
+    return {
+      ok: false,
+      reason: "Live database is temporarily busy. Using safety rules instead.",
+    };
+  }
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      try {
+        const errJson = (await response.json()) as Record<string, unknown>;
+        const msg =
+          typeof errJson.error === "string"
+            ? errJson.error
+            : typeof errJson.message === "string"
+              ? errJson.message
+              : "";
+        return {
+          ok: false,
+          reason: msg
+            ? `Live database error (${response.status}): ${msg}`
+            : `Live database returned status ${response.status}.`,
+        };
+      } catch {
+        // Fall through to generic status reason
+      }
+    } else if (contentType.includes("text/html")) {
+      return {
+        ok: false,
+        reason: `Upstream network/CDN blocked request (status ${response.status}).`,
+      };
+    }
+    return {
+      ok: false,
+      reason: `Live database returned status ${response.status}.`,
+    };
+  }
+
+  const rawJson = (await response.json()) as Record<string, unknown>;
+  const payload =
+    rawJson && typeof rawJson.data === "object" && rawJson.data !== null
+      ? (rawJson.data as Record<string, unknown>)
+      : rawJson;
+  return { ok: true, data: payload };
 }
 
 async function lookupPenipuMY(rawPhone: string): Promise<PenipuMYLookupResult> {
@@ -240,7 +323,7 @@ async function lookupPenipuMY(rawPhone: string): Promise<PenipuMYLookupResult> {
     ...(reason ? { reason } : {}),
   });
 
-  const apiKey = process.env.PENIPUMY_KEY?.trim();
+  const apiKey = getPenipuMYKey();
   if (!apiKey) {
     return emptyResult();
   }
@@ -254,30 +337,16 @@ async function lookupPenipuMY(rawPhone: string): Promise<PenipuMYLookupResult> {
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
   try {
-    const response = await fetch(
+    const res = await fetchPenipuMYJson(
       `https://api.penipu.my/v1/phone?q=${encodeURIComponent(cleaned)}`,
-      {
-        method: "GET",
-        headers: {
-          "X-API-Key": apiKey,
-          Accept: "application/json",
-        },
-        signal: controller.signal,
-      }
+      apiKey,
+      controller.signal
     );
-
-    if (response.status === 429) {
-      return emptyResult("Live database is temporarily busy. Using safety rules instead.");
-    }
-    if (!response.ok) {
-      return emptyResult(`Live database returned status ${response.status}.`);
+    if (!res.ok) {
+      return emptyResult(res.reason);
     }
 
-    const rawJson = (await response.json()) as Record<string, unknown>;
-    const payload =
-      rawJson && typeof rawJson.data === "object" && rawJson.data !== null
-        ? (rawJson.data as Record<string, unknown>)
-        : rawJson;
+    const payload = res.data;
 
     const policeReportCount = Number(payload.police_report_count) || 0;
     const verifiedReportCount = Number(payload.verified_report_count) || 0;
@@ -313,6 +382,80 @@ async function lookupPenipuMY(rawPhone: string): Promise<PenipuMYLookupResult> {
         typeof businessObj?.spoofing_report_count === "number"
           ? businessObj.spoofing_report_count
           : undefined,
+    };
+  } catch {
+    return emptyResult("Could not reach the live database right now.");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function lookupPenipuMYBank(rawAccount: string): Promise<PenipuMYBankLookupResult> {
+  const emptyResult = (reason?: string): PenipuMYBankLookupResult => ({
+    available: false,
+    police_report_count: 0,
+    verified_report_count: 0,
+    unverified_report_count: 0,
+    bnm_alert: false,
+    fraud: false,
+    ...(reason ? { reason } : {}),
+  });
+
+  const apiKey = getPenipuMYKey();
+  if (!apiKey) {
+    return emptyResult();
+  }
+
+  const digits = rawAccount.replace(/\D/g, "");
+  if (digits.length < 6) {
+    return emptyResult();
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const res = await fetchPenipuMYJson(
+      `https://api.penipu.my/v1/bank?q=${encodeURIComponent(digits)}`,
+      apiKey,
+      controller.signal
+    );
+    if (!res.ok) {
+      return emptyResult(res.reason);
+    }
+
+    const payload = res.data;
+
+    const policeReportCount = Number(payload.police_report_count) || 0;
+    const verifiedReportCount = Number(payload.verified_report_count) || 0;
+    const unverifiedReportCount = Number(payload.unverified_report_count) || 0;
+    const bnmAlert = Boolean(payload.bnm_alert);
+    const fraud = Boolean(payload.fraud);
+
+    const riskObj =
+      payload.risk && typeof payload.risk === "object"
+        ? (payload.risk as Record<string, unknown>)
+        : undefined;
+
+    return {
+      available: true,
+      bank_account: typeof payload.bank_account === "string" ? payload.bank_account : digits,
+      holder_name: typeof payload.holder_name === "string" ? payload.holder_name : undefined,
+      bank_name: typeof payload.bank_name === "string" ? payload.bank_name : undefined,
+      police_report_count: policeReportCount,
+      police_report_status:
+        typeof payload.police_report_status === "string"
+          ? payload.police_report_status
+          : undefined,
+      verified_report_count: verifiedReportCount,
+      unverified_report_count: unverifiedReportCount,
+      bnm_alert: bnmAlert,
+      fraud,
+      risk_level: typeof riskObj?.level === "string" ? riskObj.level : undefined,
+      risk_score: typeof riskObj?.score === "number" ? riskObj.score : undefined,
+      risk_reasons: Array.isArray(riskObj?.reasons)
+        ? riskObj.reasons.filter((r): r is string => typeof r === "string")
+        : undefined,
     };
   } catch {
     return emptyResult("Could not reach the live database right now.");
@@ -442,6 +585,7 @@ function assessBankAccount(
   rawAccount: string,
   bankName: string,
   claimedIdentity: string,
+  penipuBank: PenipuMYBankLookupResult,
   localFlagReason?: string
 ): BankRuleAssessment {
   const digits = rawAccount.replace(/\D/g, "");
@@ -459,12 +603,40 @@ function assessBankAccount(
     );
   }
 
+  if (penipuBank.available) {
+    const communityTotal = penipuBank.verified_report_count + penipuBank.unverified_report_count;
+    reasons.push(
+      `LIVE PENIPUMY BANK DATABASE RESULT: police_report_count=${penipuBank.police_report_count}, police_report_status=${penipuBank.police_report_status ?? "unknown"}, verified_report_count=${penipuBank.verified_report_count}, unverified_report_count=${penipuBank.unverified_report_count}, bnm_alert=${penipuBank.bnm_alert}, fraud=${penipuBank.fraud}, reported_bank_name=${penipuBank.bank_name ?? "unknown"}, reported_holder_name=${penipuBank.holder_name ?? "unknown"}, risk_level=${penipuBank.risk_level ?? "unknown"}, risk_score=${penipuBank.risk_score ?? "unknown"}, risk_reasons=${(penipuBank.risk_reasons ?? []).join("; ") || "none"}.`
+    );
+
+    if (
+      penipuBank.police_report_count > 0 ||
+      penipuBank.verified_report_count > 0 ||
+      penipuBank.fraud ||
+      penipuBank.bnm_alert
+    ) {
+      enforcedVerdict = "STOP";
+      reasons.push(
+        `DATABASE RULE -> MUST BE 'STOP': Scam reports or a Bank Negara alert were found for this bank account! Explain clearly in calm, plain language: ${penipuBank.police_report_count} police report(s) and ${communityTotal} community report(s)${penipuBank.bnm_alert ? ", plus a Bank Negara Malaysia (BNM) Scam Alert" : ""}. Warn the user NOT to transfer any money.`
+      );
+    } else if (penipuBank.unverified_report_count > 0) {
+      enforcedVerdict = "WAIT";
+      reasons.push(
+        `DATABASE RULE -> MUST BE 'WAIT': Suspicious community reports were found (${penipuBank.unverified_report_count} unverified report(s)). Advise checking carefully before transferring money.`
+      );
+    } else {
+      reasons.push(
+        `DATABASE RULE -> NO REPORTS FOUND (MUST STILL BE 'WAIT', NEVER 'SAFE'): 0 scam reports were found for this bank account yet, but remind the senior calmly that scammers frequently switch to new rented bank accounts, so still verify before transferring money.`
+      );
+    }
+  }
+
   if (claimsAuthorityOrBank) {
     enforcedVerdict = "STOP";
     reasons.push(
       "IDENTITY RULE -> MUST BE 'STOP': Someone claiming to be Police, Government (LHDN/MCMC/Court), or a Bank is asking for a transfer to this account. Real Malaysian police, government agencies, and banks NEVER ask citizens to transfer money to a 'safe account', 'audit account', or personal bank account for investigation or verification."
     );
-  } else {
+  } else if (!penipuBank.available) {
     reasons.push(
       `BANK ACCOUNT CHECK GUIDANCE (MUST BE 'WAIT' or 'STOP', NEVER 'SAFE'): Account digits length=${digits.length}, bank=${bankName || "Not specified"}. Explain calmly that scammers often use rented personal bank accounts ('mule accounts') to receive stolen money. Do NOT mention any missing API or technical limitation. Advise the user to tap the 'Copy & Check on PDRM Semak Mule' and 'Copy & Check on Penipu.my' buttons below before transferring any money, and verify directly with a trusted family member.`
     );
@@ -557,6 +729,19 @@ async function startServer() {
       return;
     }
     const lookup = await lookupPenipuMY(q);
+    res.json(lookup);
+  });
+
+  app.get("/api/check-bank", async (req: Request, res: Response) => {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    if (!q.trim()) {
+      res.status(400).json({
+        available: false,
+        reason: "Missing bank account query parameter.",
+      });
+      return;
+    }
+    const lookup = await lookupPenipuMYBank(q);
     res.json(lookup);
   });
 
@@ -673,6 +858,7 @@ async function startServer() {
         let phoneAssessment: PhoneRuleAssessment | null = null;
         let bankAssessment: BankRuleAssessment | null = null;
         let penipuLookup: PenipuMYLookupResult | null = null;
+        let penipuBankLookup: PenipuMYBankLookupResult | null = null;
 
         if (isPhoneCheck && rawPhone) {
           penipuLookup = await lookupPenipuMY(rawPhone);
@@ -691,17 +877,19 @@ async function startServer() {
             `Remember: NEVER use technical jargon like "spoofing" or "phishing" — use plain words like "fake the caller name/number" or "trick". Keep explanations calm and clear for a 70-year-old, and write EVERY output field strictly in ${targetLang}.`
           );
         } else if (isBankCheck && rawBankAccount) {
+          penipuBankLookup = await lookupPenipuMYBank(rawBankAccount);
           bankAssessment = assessBankAccount(
             rawBankAccount,
             rawBankName,
             claimedIdentity,
+            penipuBankLookup,
             localFlagReason || undefined
           );
           const claimedLabel = CLAIMED_IDENTITY_LABELS[claimedIdentity] || "Not Sure";
           instructionLines.push(
             `BANK ACCOUNT CHECK REQUEST:`,
             `Bank account number entered: ${rawBankAccount}`,
-            `Bank name (if provided): ${rawBankName || "Not specified"}`,
+            `Bank name (if provided): ${rawBankName || penipuBankLookup.bank_name || "Not specified"}`,
             `Who asked them to transfer to this account: ${claimedLabel}`,
             bankAssessment.ruleSummaryForPrompt,
             `Remember: NEVER use technical jargon like "mule account" without explaining it simply as "a bank account used by scammers to collect money". Keep explanations calm and clear for a 70-year-old, and write EVERY output field strictly in ${targetLang}.`
@@ -790,6 +978,19 @@ async function startServer() {
               parsed.verdict = "STOP";
             } else if (parsed.verdict === "SAFE") {
               parsed.verdict = bankAssessment.enforcedVerdict;
+            }
+            if (penipuBankLookup?.available) {
+              parsed.bank_lookup = {
+                available: true,
+                police_report_count: penipuBankLookup.police_report_count,
+                verified_report_count: penipuBankLookup.verified_report_count,
+                unverified_report_count: penipuBankLookup.unverified_report_count,
+                fraud: penipuBankLookup.fraud,
+                bnm_alert: penipuBankLookup.bnm_alert,
+                bank_name: penipuBankLookup.bank_name,
+                holder_name: penipuBankLookup.holder_name,
+                police_report_status: penipuBankLookup.police_report_status,
+              };
             }
           }
 

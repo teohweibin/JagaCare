@@ -129,6 +129,8 @@ export interface TranslationBundle {
     dbSummaryTitle: string;
     dbPoliceReports: string;
     dbCommunityReports: string;
+    dbBnmAlert: string;
+    dbBnmYes: string;
     dbSpoofingBadge: string;
     dbZeroReportsNote: string;
     dbUnavailableNote: string;
@@ -143,6 +145,11 @@ export interface TranslationBundle {
     removeLocalFlagButton: string;
     removeLocalFlagToast: string;
     phoneVerdictBanner: {
+      reportsFound: string;
+      suspiciousFound: string;
+      noReportsFound: string;
+    };
+    bankVerdictBanner: {
       reportsFound: string;
       suspiciousFound: string;
       noReportsFound: string;
@@ -169,6 +176,23 @@ export interface TranslationBundle {
     whatsappShareWarningsTitle: string;
     copyResultButton: string;
     copiedResultToast: string;
+    trends: {
+      title: string;
+      checksUnitSingular: string;
+      checksUnitPlural: string;
+      flaggedRiskySuffix: string;
+      emptyText: string;
+      footerNote: string;
+      chartAriaLabel: string;
+      categories: {
+        impersonation: string;
+        phishing: string;
+        investment: string;
+        payment: string;
+        safe: string;
+        other: string;
+      };
+    };
   };
   emergency: {
     alertTitle: string;
@@ -353,6 +377,8 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       dbSummaryTitle: 'Database Check Summary',
       dbPoliceReports: 'Police Reports:',
       dbCommunityReports: 'Community Reports:',
+      dbBnmAlert: 'BNM Alert:',
+      dbBnmYes: 'Yes',
       dbSpoofingBadge: 'Official Number Often Faked',
       dbZeroReportsNote: '0 reports found yet — still be careful, scammers constantly switch SIM cards.',
       dbUnavailableNote: '',
@@ -374,6 +400,11 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
         reportsFound: '🛑 STOP — Scam Reports Found. Do NOT reply, answer, or pay.',
         suspiciousFound: '⚠️ WAIT — Suspicious Reports Found. Check safely first.',
         noReportsFound: 'WAIT — No Reports Found Yet. Still Be Careful.',
+      },
+      bankVerdictBanner: {
+        reportsFound: '🛑 STOP — Scam Reports Found for This Bank Account. Do NOT transfer money.',
+        suspiciousFound: '⚠️ WAIT — Suspicious Reports Found for This Account. Check safely first.',
+        noReportsFound: 'WAIT — No Reports Found Yet. Verify Carefully Before Transferring.',
       },
       verdictBanner: {
         STOP: 'STOP — Likely a Scam. Do NOT reply, click, or pay.',
@@ -402,6 +433,23 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       whatsappShareWarningsTitle: 'Warning signs spotted:',
       copyResultButton: '📋 Copy Result Summary',
       copiedResultToast: 'Result copied to clipboard! Ready to paste into notes or chat.',
+      trends: {
+        title: 'Scam Detection Trends',
+        checksUnitSingular: 'local check',
+        checksUnitPlural: 'local checks',
+        flaggedRiskySuffix: 'flagged STOP or WAIT',
+        emptyText: 'Your check history is empty. Run checks to see your personal scam category trends here.',
+        footerNote: 'Calculated privately from your saved local check history on this device.',
+        chartAriaLabel: 'Bar chart showing the distribution of scam types from your local check history',
+        categories: {
+          impersonation: 'Impersonation',
+          phishing: 'Phishing & Fake Links',
+          investment: 'Investment & Job Scams',
+          payment: 'Mule & Seller Risk',
+          safe: 'Safe / No Threat',
+          other: 'Other Suspicious',
+        },
+      },
     },
     emergency: {
       alertTitle: 'Calm Rescue Guide',
@@ -592,6 +640,8 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       dbSummaryTitle: 'Ringkasan Semakan Pangkalan Data',
       dbPoliceReports: 'Laporan Polis:',
       dbCommunityReports: 'Laporan Komuniti:',
+      dbBnmAlert: 'Amaran BNM:',
+      dbBnmYes: 'Ya',
       dbSpoofingBadge: 'Nombor Rasmi Sering Dipalsukan',
       dbZeroReportsNote: '0 laporan ditemui setakat ini — tetap berhati-hati kerana penipu sering tukar kad SIM baharu.',
       dbUnavailableNote: '',
@@ -613,6 +663,11 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
         reportsFound: '🛑 BERHENTI — Laporan Penipuan Ditemui. JANGAN balas, jawab, atau bayar.',
         suspiciousFound: '⚠️ TUNGGU — Laporan Mencurigakan Ditemui. Semak dengan selamat dahulu.',
         noReportsFound: 'TUNGGU — Tiada Laporan Ditemui Setakat Ini. Tetap Berhati-hati.',
+      },
+      bankVerdictBanner: {
+        reportsFound: '🛑 BERHENTI — Laporan Penipuan Ditemui untuk Akaun Bank Ini. JANGAN pindah wang.',
+        suspiciousFound: '⚠️ TUNGGU — Laporan Mencurigakan Ditemui untuk Akaun Ini. Semak dahulu.',
+        noReportsFound: 'TUNGGU — Tiada Laporan Ditemui Setakat Ini. Sahkan Sebelum Pindah Wang.',
       },
       verdictBanner: {
         STOP: 'BERHENTI — Kemungkinan Penipuan. JANGAN balas, tekan pautan, atau bayar.',
@@ -641,6 +696,23 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       whatsappShareWarningsTitle: 'Tanda amaran yang dikesan:',
       copyResultButton: '📋 Salin Ringkasan Keputusan',
       copiedResultToast: 'Keputusan disalin ke papan keratan! Sedia untuk ditampal ke nota atau chat.',
+      trends: {
+        title: 'Trend Pengesanan Penipuan',
+        checksUnitSingular: 'semakan setempat',
+        checksUnitPlural: 'semakan setempat',
+        flaggedRiskySuffix: 'ditanda BERHENTI atau TUNGGU',
+        emptyText: 'Sejarah semakan anda kosong. Jalankan semakan untuk melihat pecahan jenis penipuan anda di sini.',
+        footerNote: 'Dikira secara peribadi daripada sejarah semakan pada peranti ini sahaja.',
+        chartAriaLabel: 'Carta bar menunjukkan pecahan jenis penipuan daripada sejarah semakan anda',
+        categories: {
+          impersonation: 'Penyamaran',
+          phishing: 'Pancingan & Pautan Palsu',
+          investment: 'Pelaburan & Kerja Palsu',
+          payment: 'Akaun Keldai & Penjual',
+          safe: 'Selamat / Tiada Bahaya',
+          other: 'Risiko Lain',
+        },
+      },
     },
     emergency: {
       alertTitle: 'Panduan Penyelamatan Tenang',
@@ -831,6 +903,8 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       dbSummaryTitle: '数据库查证摘要',
       dbPoliceReports: '警方报案记录：',
       dbCommunityReports: '民众举报记录：',
+      dbBnmAlert: '国家银行 (BNM) 警报：',
+      dbBnmYes: '是',
       dbSpoofingBadge: '官方号码常被冒充伪造',
       dbZeroReportsNote: '暂未查到举报记录 — 但骗子经常更换新电话卡，仍请务必小心核实。',
       dbUnavailableNote: '',
@@ -852,6 +926,11 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
         reportsFound: '🛑 立刻停止 — 查到诈骗举报记录！千万不要回复、接听或转账。',
         suspiciousFound: '⚠️ 先等一等 — 查到可疑举报记录。请先安全核实。',
         noReportsFound: '先等一等 — 暂未查到举报记录，仍需保持警惕。',
+      },
+      bankVerdictBanner: {
+        reportsFound: '🛑 立刻停止 — 查到此银行账号有诈骗举报记录！千万不要转账。',
+        suspiciousFound: '⚠️ 先等一等 — 查到此账号有可疑举报记录。请先核实再决定。',
+        noReportsFound: '先等一等 — 暂未查到举报记录，转账前仍请务必核实清楚。',
       },
       verdictBanner: {
         STOP: '立刻停止 — 很可能是诈骗。千万不要回复、点击或转账。',
@@ -880,6 +959,23 @@ export const TRANSLATIONS: Record<Language, TranslationBundle> = {
       whatsappShareWarningsTitle: '发现的可疑之处：',
       copyResultButton: '📋 复制检查结果摘要',
       copiedResultToast: '已复制检查结果到剪贴板！可直接粘贴到笔记或聊天中。',
+      trends: {
+        title: '诈骗类型趋势',
+        checksUnitSingular: '条本地检查记录',
+        checksUnitPlural: '条本地检查记录',
+        flaggedRiskySuffix: '条被标记为停止或等待',
+        emptyText: '暂无检查记录。完成检查后，这里会显示您查过的诈骗类型分布。',
+        footerNote: '仅根据本设备保存的本地检查记录在本地统计，不会上传任何隐私。',
+        chartAriaLabel: '展示您本地检查记录中各类诈骗分布的条形图',
+        categories: {
+          impersonation: '冒充身份（银行/警方/快递）',
+          phishing: '钓鱼链接与假网站',
+          investment: '投资与兼职骗局',
+          payment: '人头账户与网购风险',
+          safe: '安全 / 无明显危险',
+          other: '其他可疑情况',
+        },
+      },
     },
     emergency: {
       alertTitle: '冷静急救指南',

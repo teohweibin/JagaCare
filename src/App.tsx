@@ -29,7 +29,7 @@ const STORAGE_FAMILY_NAME = 'trustedFamilyName';
 const STORAGE_FAMILY_PHONE = 'trustedFamilyPhone';
 const STORAGE_HISTORY_KEY = 'jagacare_check_history';
 const STORAGE_ONBOARDING_KEY = 'hasSeenOnboarding';
-const MAX_HISTORY_ITEMS = 5;
+const MAX_HISTORY_ITEMS = 25;
 
 function getShouldShowOnboarding(): boolean {
   try {
@@ -601,6 +601,7 @@ export default function App() {
               result={analysisResult}
               submittedInput={submittedInput}
               familyContact={familyContact}
+              history={history}
               onCancelLoading={handleCancelLoading}
               onRetry={handleRetry}
               onCheckAnother={handleBackHome}
