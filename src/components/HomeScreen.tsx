@@ -182,6 +182,14 @@ export function HomeScreen({
         </div>
       </StackedCard>
 
+      <div className="rounded-2xl border-2 border-[#18181B] bg-[#FFF7D6] px-5 py-4 text-[15px] font-semibold leading-6 text-[#3F3F46]">
+        {language === 'ms'
+          ? 'Demo percuma: keputusan menggunakan contoh dan peraturan pada peranti ini sahaja. Foto serta nota suara tidak dihantar atau dibaca.'
+          : language === 'zh'
+            ? '免费演示：结果只使用此设备上的示例和规则。照片和语音不会被上传或读取。'
+            : 'Free demo: results use examples and rules on this device only. Photos and voice notes are not uploaded or read.'}
+      </div>
+
       {/* Action 1: Giant Primary Pill Button — Upload Screenshot or Photo */}
       <div>
         <input

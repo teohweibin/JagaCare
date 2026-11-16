@@ -2,6 +2,12 @@
 
 > Calm, elderly-friendly anti-scam checker for WhatsApp, Telegram, SMS, screenshots, and voice notes.
 
+## Public demo (no API key)
+
+This repository can be deployed to Vercel as a free, static product demo. The demo has no server, API key, Gemini request, or paid lookup. It uses local example-based rules to show the **STOP**, **WAIT**, and **SAFE** journeys. Uploaded photos and voice notes are deliberately not read or uploaded; the demo explains this on its result screen.
+
+To deploy, import this GitHub repository into Vercel and use its defaults (`npm run build`, output `dist`). `vercel.json` includes the required single-page-app rewrite. Do not set `GEMINI_API_KEY` or any other secret.
+
 JagaCare lets a senior (or the family member helping them) paste a suspicious message, upload a screenshot or voice note, or type in a phone number or bank account — and get back a plain-language verdict: **STOP**, **WAIT**, or **SAFE**. Explanations are written the way you'd explain something to a 70-year-old parent, in **English, Bahasa Melayu, or 简体中文**, with no technical jargon.
 
 Built around Malaysian scam patterns: fake PDRM/LHDN calls, Macau Scam, mule accounts, fake parcel notices, `.apk` installers, and OTP/TAC requests.
@@ -54,8 +60,8 @@ The server computes its own assessment before calling the model and injects it a
 
 ### Prerequisites
 
-- Node 20+ (or Bun — a `bun.lock` is committed)
-- A Gemini API key
+- Node 20+
+- No API key is needed for the public demo
 
 ### Install
 
@@ -65,29 +71,15 @@ cd JagaCare
 npm install
 ```
 
-### Configure
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `GEMINI_API_KEY` | Yes | Gemini API calls. Without it, `/api/analyze` returns a 500. |
-| `APP_URL` | No | Public URL of the deployment, for self-referential links |
-| `PENIPUMY_KEY` | No | Live PenipuMY phone lookups. Without it, phone checks still run on the built-in rules. |
-| `PORT` | No | Server port (default `3000`) |
-
 ### Run
 
 ```bash
-npm run dev      # Express + Vite middleware, hot reload
+npm run dev      # Vite development server
 npm run build    # production bundle to dist/
-npm start        # serve dist/ via Express (set NODE_ENV=production)
 npm run lint     # tsc --noEmit
 ```
 
-Open http://localhost:3000.
+Open the address shown by Vite (normally http://localhost:5173).
 
 > Set `DISABLE_HMR=true` to turn off file watching and HMR (used when an agent is editing files).
 

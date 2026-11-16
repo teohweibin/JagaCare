@@ -15,7 +15,7 @@ import {
   buildWhatsAppShareUrl,
   countDigits,
 } from './utils/formatters';
-import { getLocalScamFlag } from './utils/localFlags';
+import { analyzeDemo, translateDemo } from './utils/demoAnalysis';
 import { BackgroundShapes } from './components/BackgroundShapes';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
@@ -251,72 +251,14 @@ export default function App() {
 
       try {
         const activeLang = langOverride ?? language;
-        let response: Response;
-
-        if (input.rawFile) {
-          const formData = new FormData();
-          formData.append('language', activeLang);
-          if (input.type === 'image') {
-            formData.append('image', input.rawFile);
-          } else if (input.type === 'audio') {
-            formData.append('audio', input.rawFile);
-          }
-          response = await fetch('/api/analyze', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal,
-          });
-        } else if (input.type === 'phone') {
-          const localFlag = getLocalScamFlag('phone', input.phoneNumber, activeLang);
-          response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'phone',
-              phoneNumber: input.phoneNumber ?? '',
-              claimedIdentity: input.claimedIdentity ?? 'not_sure',
-              localFlagReason: localFlag?.reason ?? '',
-              language: activeLang,
-            }),
-            signal: controller.signal,
-          });
-        } else if (input.type === 'bank') {
-          const localFlag = getLocalScamFlag('bank', input.bankAccount, activeLang);
-          response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'bank',
-              bankAccount: input.bankAccount ?? '',
-              bankName: input.bankName ?? '',
-              claimedIdentity: input.claimedIdentity ?? 'not_sure',
-              localFlagReason: localFlag?.reason ?? '',
-              language: activeLang,
-            }),
-            signal: controller.signal,
-          });
-        } else {
-          response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              text: input.text ?? '',
-              language: activeLang,
-            }),
-            signal: controller.signal,
-          });
-        }
-
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(
-            typeof data?.error === 'string' && data.error
-              ? data.error
-              : 'Unable to check this message right now. Please try again.'
-          );
-        }
-
-        const parsedResult = data as AnalysisResult;
+        await new Promise<void>((resolve, reject) => {
+          const timeout = window.setTimeout(resolve, 650);
+          controller.signal.addEventListener('abort', () => {
+            window.clearTimeout(timeout);
+            reject(new DOMException('Cancelled', 'AbortError'));
+          }, { once: true });
+        });
+        const parsedResult = analyzeDemo(input, activeLang);
         resultCacheRef.current = { [activeLang]: parsedResult };
         setResultLang(activeLang);
         setAnalysisResult(parsedResult);
@@ -524,26 +466,7 @@ export default function App() {
 
     setIsTranslating(true);
 
-    fetch('/api/translate-result', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        result: sourceResult,
-        targetLanguage,
-      }),
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(
-            typeof data?.error === 'string' && data.error
-              ? data.error
-              : TRANSLATIONS[targetLanguage].results.translateErrorToast
-          );
-        }
-        return data as AnalysisResult;
-      })
+    Promise.resolve(translateDemo(sourceResult, targetLanguage))
       .then((translated) => {
         if (controller.signal.aborted || translateSeqRef.current !== seq) return;
         resultCacheRef.current[targetLanguage] = translated;
