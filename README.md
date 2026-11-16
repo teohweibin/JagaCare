@@ -4,6 +4,8 @@
 
 ## Public demo (no API key)
 
+**Try it:** [jaga-care.vercel.app](https://jaga-care.vercel.app/)
+
 This repository can be deployed to Vercel as a free, static product demo. The demo has no server, API key, Gemini request, or paid lookup. It uses local example-based rules to show the **STOP**, **WAIT**, and **SAFE** journeys. Uploaded photos and voice notes are deliberately not read or uploaded; the demo explains this on its result screen.
 
 To deploy, import this GitHub repository into Vercel and use its defaults (`npm run build`, output `dist`). `vercel.json` includes the required single-page-app rewrite. Do not set `GEMINI_API_KEY` or any other secret.
