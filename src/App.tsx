@@ -28,16 +28,7 @@ const STORAGE_LANG_KEY = 'jagacare_language';
 const STORAGE_FAMILY_NAME = 'trustedFamilyName';
 const STORAGE_FAMILY_PHONE = 'trustedFamilyPhone';
 const STORAGE_HISTORY_KEY = 'jagacare_check_history';
-const STORAGE_ONBOARDING_KEY = 'hasSeenOnboarding';
 const MAX_HISTORY_ITEMS = 25;
-
-function getShouldShowOnboarding(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_ONBOARDING_KEY) !== 'true';
-  } catch {
-    return false;
-  }
-}
 
 function getInitialLanguage(): Language {
   try {
@@ -134,7 +125,8 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [resultLang, setResultLang] = useState<Language>(language);
   const [history, setHistory] = useState<HistoryEntry[]>(getInitialHistory);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(getShouldShowOnboarding);
+  // This public demo always starts each fresh page visit with its guide.
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(true);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const translateAbortRef = useRef<AbortController | null>(null);
@@ -493,11 +485,6 @@ export default function App() {
 
   const handleCloseOnboarding = () => {
     setIsOnboardingOpen(false);
-    try {
-      localStorage.setItem(STORAGE_ONBOARDING_KEY, 'true');
-    } catch {
-      // ignore storage errors
-    }
   };
 
   const handleSaveFamilyFromOnboarding = (contact: TrustedFamilyContact) => {
@@ -505,7 +492,6 @@ export default function App() {
     try {
       localStorage.setItem(STORAGE_FAMILY_NAME, contact.name);
       localStorage.setItem(STORAGE_FAMILY_PHONE, contact.phone);
-      localStorage.setItem(STORAGE_ONBOARDING_KEY, 'true');
     } catch {
       // ignore storage errors
     }
